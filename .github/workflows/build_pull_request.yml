@@ -93,6 +93,25 @@ jobs:
           } > size-report.md
           gh pr comment ${{ github.event.pull_request.number }} --body-file size-report.md || true
 
+      # Publish the installable APK as a release asset so it can be downloaded
+      # through one stable direct link (no artifact zip / login wall dance):
+      #   https://github.com/<repo>/releases/download/apk-pr-<PR>/mihono-arm64-v8a.apk
+      - name: Publish direct APK download link
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="apk-pr-${{ github.event.pull_request.number }}"
+          cp app/build/outputs/apk/preview/app-arm64-v8a-preview.apk mihono-arm64-v8a.apk
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" \
+            --prerelease \
+            --title "Mihono APK (PR #${{ github.event.pull_request.number }})" \
+            --notes "Rolling preview build (arm64-v8a, debug-signed) from the latest PR build."
+          gh release upload "$TAG" mihono-arm64-v8a.apk --clobber
+          URL="https://github.com/${{ github.repository }}/releases/download/$TAG/mihono-arm64-v8a.apk"
+          echo "Direct APK download: $URL" >> "$GITHUB_STEP_SUMMARY"
+          printf '📥 **Direct APK download (arm64-v8a):** %s\n\nBuilt from `%s`.\n' "$URL" "${{ github.sha }}" > apk-link.md
+          gh pr comment ${{ github.event.pull_request.number }} --body-file apk-link.md || true
+
       - name: Upload mapping
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

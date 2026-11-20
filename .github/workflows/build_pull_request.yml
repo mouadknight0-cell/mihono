@@ -50,7 +50,11 @@ jobs:
         run: ./gradlew spotlessCheck 2>&1 | tee spotless.log
 
       - name: Build app
-        run: ./gradlew :app:assembleRelease :app:assemblePreview 2>&1 | tee build.log
+        run: |
+          ./gradlew :app:assembleDebug :app:assemblePreview --console=plain 2>&1 | tee build.log
+          echo "=== outputs after build (same step) ===" | tee outputs.log
+          find app/build/outputs -type f 2>/dev/null | sort | tee -a outputs.log
+          test -n "$(find app/build/outputs -name '*.apk' -print -quit 2>/dev/null)" || { echo "NO APK PRODUCED"; exit 1; }
 
       - name: Run unit tests
         run: ./gradlew testReleaseUnitTest 2>&1 | tee test.log

@@ -55,6 +55,23 @@ jobs:
       - name: Run unit tests
         run: ./gradlew testReleaseUnitTest 2>&1 | tee test.log
 
+      - name: List build outputs
+        if: always()
+        run: find app/build/outputs -type f 2>/dev/null | sort | tee outputs.log
+
+      - name: Upload APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mihono-apk-${{ github.sha }}
+          if-no-files-found: error
+          path: app/build/outputs/**/*.apk
+
+      - name: Upload mapping
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mapping-${{ github.sha }}
+          path: app/build/outputs/mapping/release
+
       # Build logs cannot be downloaded from every environment, so surface the
       # relevant errors directly on the PR for diagnosis.
       - name: Report failure on PR
@@ -66,26 +83,12 @@ jobs:
             echo "### CI failure @ ${{ github.sha }}"
             echo
             echo '```'
-            grep -hE "e: |error:|FAILED|What went wrong|Execution failed" spotless.log build.log test.log 2>/dev/null | head -n 120
+            grep -hE "e: |error:|FAILED|What went wrong|Execution failed" spotless.log build.log test.log outputs.log 2>/dev/null | head -n 120
             echo '```'
             echo
             echo '```'
-            tail -n 120 spotless.log build.log test.log 2>/dev/null | tail -n 120
+            tail -n 120 spotless.log build.log test.log outputs.log 2>/dev/null | tail -n 120
             echo '```'
           } > report.md
           gh pr comment ${{ github.event.pull_request.number }} --body-file report.md || true
 
-      - name: Upload APK
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: mihono-apk-${{ github.sha }}
-          if-no-files-found: error
-          path: |
-            app/build/outputs/apk/release/*.apk
-            app/build/outputs/apk/preview/*.apk
-
-      - name: Upload mapping
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: mapping-${{ github.sha }}
-          path: app/build/outputs/mapping/release

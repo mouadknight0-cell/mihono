@@ -55,6 +55,12 @@ jobs:
       - name: Run unit tests
         run: ./gradlew testReleaseUnitTest 2>&1 | tee test.log
 
+      - name: Locate APKs (annotation diagnostic)
+        if: always()
+        run: |
+          echo "::error title=APK-LOCATIONS::$(find . -name '*.apk' -o -name '*.aab' 2>/dev/null | head -30 | tr '\n' ';')"
+          echo "::error title=OUTPUTS-DIR::$(ls -R app/build/outputs 2>/dev/null | head -60 | tr '\n' ';')"
+
       - name: List build outputs
         if: always()
         run: find . -path ./node_modules -prune -o -type f -name '*.apk' -print 2>/dev/null | sort | tee outputs.log; ls app/build/outputs/apk 2>/dev/null || echo 'no app/build/outputs/apk'

@@ -1,7 +1,7 @@
 package eu.kanade.domain.source.service
 
 import eu.kanade.domain.source.interactor.SetMigrateSorting
-import eu.kanade.domain.source.manga.interactor.MANWA_LANG
+import eu.kanade.tachiyomi.util.system.LocaleHelper
 import tachiyomi.core.common.preference.Preference
 import tachiyomi.core.common.preference.PreferenceStore
 import tachiyomi.core.common.preference.getEnum
@@ -22,8 +22,7 @@ class SourcePreferences(
 
     fun enabledLanguages() = preferenceStore.getStringSet(
         "source_languages",
-        // Mihono default: Manhwa-first app — only offer Manhwa sources by default.
-        setOf(MANWA_LANG),
+        LocaleHelper.getDefaultEnabledLanguages(),
     )
 
     fun showNsfwSource() = preferenceStore.getBoolean("show_nsfw_source", true)

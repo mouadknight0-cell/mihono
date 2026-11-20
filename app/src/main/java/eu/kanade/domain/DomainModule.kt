@@ -1,6 +1,5 @@
 package eu.kanade.domain
 
-import eu.kanade.domain.download.anime.interactor.DeleteEpisodeDownload
 import eu.kanade.domain.download.manga.interactor.DeleteChapterDownload
 import eu.kanade.domain.entries.anime.interactor.SetAnimeViewerFlags
 import eu.kanade.domain.entries.anime.interactor.SyncSeasonsWithSource
@@ -46,7 +45,6 @@ import eu.kanade.domain.track.manga.interactor.AddMangaTracks
 import eu.kanade.domain.track.manga.interactor.RefreshMangaTracks
 import eu.kanade.domain.track.manga.interactor.SyncChapterProgressWithTrack
 import eu.kanade.domain.track.manga.interactor.TrackChapter
-import eu.kanade.tachiyomi.ui.player.utils.TrackSelect
 import mihon.data.repository.anime.AnimeExtensionRepoRepositoryImpl
 import mihon.data.repository.manga.MangaExtensionRepoRepositoryImpl
 import mihon.domain.extensionrepo.anime.interactor.CreateAnimeExtensionRepo
@@ -328,9 +326,9 @@ class DomainModule : InjektModule {
         addFactory { GetEpisodesByAnimeId(get()) }
         addFactory { GetEpisodeByUrlAndAnimeId(get()) }
         addFactory { UpdateEpisode(get()) }
-        addFactory { SetSeenStatus(get(), get(), get(), get()) }
+        addFactory { SetSeenStatus(get()) }
         addFactory { ShouldUpdateDbEpisode() }
-        addFactory { SyncEpisodesWithSource(get(), get(), get(), get(), get(), get(), get(), get()) }
+        addFactory { SyncEpisodesWithSource(get(), get(), get(), get(), get(), get()) }
         addFactory { FilterEpisodesForDownload(get(), get(), get()) }
 
         addSingletonFactory<ChapterRepository> { ChapterRepositoryImpl(get()) }
@@ -349,7 +347,6 @@ class DomainModule : InjektModule {
         addFactory { UpsertAnimeHistory(get()) }
         addFactory { RemoveAnimeHistory(get()) }
 
-        addFactory { DeleteEpisodeDownload(get(), get()) }
 
         addFactory { GetAnimeExtensionsByType(get(), get()) }
         addFactory { GetAnimeExtensionSources(get()) }
@@ -427,6 +424,5 @@ class DomainModule : InjektModule {
         addFactory { ReorderCustomButton(get()) }
         addFactory { ToggleFavoriteCustomButton(get()) }
 
-        addFactory { TrackSelect(get(), get()) }
     }
 }

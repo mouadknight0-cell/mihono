@@ -10,7 +10,6 @@ import eu.kanade.core.util.fastFilterNot
 import eu.kanade.presentation.more.stats.StatsScreenState
 import eu.kanade.presentation.more.stats.data.StatsData
 import eu.kanade.tachiyomi.animesource.model.SAnime
-import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadManager
 import eu.kanade.tachiyomi.data.track.AnimeTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import kotlinx.coroutines.flow.update
@@ -29,7 +28,6 @@ import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
 class AnimeStatsScreenModel(
-    private val downloadManager: AnimeDownloadManager = Injekt.get(),
     private val getAnimelibAnime: GetLibraryAnime = Injekt.get(),
     private val getEpisodesByAnimeId: GetEpisodesByAnimeId = Injekt.get(),
     private val getTracks: GetAnimeTracks = Injekt.get(),
@@ -67,7 +65,7 @@ class AnimeStatsScreenModel(
             val chaptersStatData = StatsData.Episodes(
                 totalEpisodeCount = distinctLibraryAnime.sumOf { it.totalCount }.toInt(),
                 readEpisodeCount = distinctLibraryAnime.sumOf { it.seenCount }.toInt(),
-                downloadCount = downloadManager.getDownloadCount(),
+                downloadCount = 0,
             )
 
             val trackersStatData = StatsData.Trackers(

@@ -12,28 +12,22 @@ import eu.kanade.core.util.insertSeparators
 import eu.kanade.domain.items.episode.interactor.SetSeenStatus
 import eu.kanade.presentation.entries.anime.components.EpisodeDownloadAction
 import eu.kanade.presentation.updates.anime.AnimeUpdatesUiModel
-import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadCache
-import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadManager
 import eu.kanade.tachiyomi.data.download.anime.model.AnimeDownload
 import eu.kanade.tachiyomi.data.library.anime.AnimeLibraryUpdateJob
 import eu.kanade.tachiyomi.util.lang.toLocalDate
 import kotlinx.collections.immutable.PersistentList
-import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import tachiyomi.core.common.util.lang.launchIO
-import tachiyomi.core.common.util.lang.launchNonCancellable
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.download.service.DownloadPreferences
 import tachiyomi.domain.entries.anime.interactor.GetAnime
@@ -50,8 +44,6 @@ import java.time.ZonedDateTime
 
 class AnimeUpdatesScreenModel(
     private val sourceManager: AnimeSourceManager = Injekt.get(),
-    private val downloadManager: AnimeDownloadManager = Injekt.get(),
-    private val downloadCache: AnimeDownloadCache = Injekt.get(),
     private val updateEpisode: UpdateEpisode = Injekt.get(),
     private val setSeenStatus: SetSeenStatus = Injekt.get(),
     private val getUpdates: GetAnimeUpdates = Injekt.get(),
@@ -78,11 +70,7 @@ class AnimeUpdatesScreenModel(
             // Set date limit for recent episodes
 
             val limit = ZonedDateTime.now().minusMonths(3).toInstant()
-            combine(
-                getUpdates.subscribe(limit).distinctUntilChanged(),
-                downloadCache.changes,
-                downloadManager.queueState,
-            ) { updates, _, _ -> updates }
+            getUpdates.subscribe(limit).distinctUntilChanged()
                 .catch {
                     logcat(LogPriority.ERROR, it)
                     _events.send(Event.InternalError)
@@ -97,32 +85,16 @@ class AnimeUpdatesScreenModel(
                 }
         }
 
-        screenModelScope.launchIO {
-            merge(downloadManager.statusFlow(), downloadManager.progressFlow())
-                .catch { logcat(LogPriority.ERROR, it) }
-                .collect(this@AnimeUpdatesScreenModel::updateDownloadState)
-        }
     }
 
     private fun List<AnimeUpdatesWithRelations>.toUpdateItems(): PersistentList<AnimeUpdatesItem> {
         return this
             .map { update ->
-                val activeDownload = downloadManager.getQueuedDownloadOrNull(update.episodeId)
-                val downloaded = downloadManager.isEpisodeDownloaded(
-                    update.episodeName,
-                    update.scanlator,
-                    update.animeTitle,
-                    update.sourceId,
-                )
-                val downloadState = when {
-                    activeDownload != null -> activeDownload.status
-                    downloaded -> AnimeDownload.State.DOWNLOADED
-                    else -> AnimeDownload.State.NOT_DOWNLOADED
-                }
+                val downloadState = AnimeDownload.State.NOT_DOWNLOADED
                 AnimeUpdatesItem(
                     update = update,
                     downloadStateProvider = { downloadState },
-                    downloadProgressProvider = { activeDownload?.progress ?: 0 },
+                    downloadProgressProvider = { 0 },
                     selected = update.episodeId in selectedEpisodeIds,
                 )
             }
@@ -137,36 +109,12 @@ class AnimeUpdatesScreenModel(
         return started
     }
 
-    /**
-     * Update status of episodes.
-     *
-     * @param download download object containing progress.
-     */
-    private fun updateDownloadState(download: AnimeDownload) {
-        mutableState.update { state ->
-            val newItems = state.items.mutate { list ->
-                val modifiedIndex = list.indexOfFirst { it.update.episodeId == download.episode.id }
-                if (modifiedIndex < 0) return@mutate
-
-                val item = list[modifiedIndex]
-                list[modifiedIndex] = item.copy(
-                    downloadStateProvider = { download.status },
-                    downloadProgressProvider = { download.progress },
-                )
-            }
-            state.copy(items = newItems)
-        }
-    }
-
     fun downloadEpisodes(items: List<AnimeUpdatesItem>, action: EpisodeDownloadAction) {
         if (items.isEmpty()) return
         screenModelScope.launch {
             when (action) {
                 EpisodeDownloadAction.START -> {
                     downloadEpisodes(items)
-                    if (items.any { it.downloadStateProvider() == AnimeDownload.State.ERROR }) {
-                        downloadManager.startDownloads()
-                    }
                 }
                 EpisodeDownloadAction.START_NOW -> {
                     val episodeId = items.singleOrNull()?.update?.episodeId ?: return@launch
@@ -189,13 +137,11 @@ class AnimeUpdatesScreenModel(
     }
 
     private fun startDownloadingNow(episodeId: Long) {
-        downloadManager.startDownloadNow(episodeId)
+        // Episode downloads were removed from Mihono.
     }
 
     private fun cancelDownload(episodeId: Long) {
-        val activeDownload = downloadManager.getQueuedDownloadOrNull(episodeId) ?: return
-        downloadManager.cancelQueuedDownloads(listOf(activeDownload))
-        updateDownloadState(activeDownload.apply { status = AnimeDownload.State.NOT_DOWNLOADED })
+        // Episode downloads were removed from Mihono.
     }
 
     /**
@@ -248,17 +194,7 @@ class AnimeUpdatesScreenModel(
      * @param updatesItem the list of episodes to download.
      */
     private fun downloadEpisodes(updatesItem: List<AnimeUpdatesItem>, alt: Boolean = false) {
-        screenModelScope.launchNonCancellable {
-            val groupedUpdates = updatesItem.groupBy { it.update.animeId }.values
-            for (updates in groupedUpdates) {
-                val animeId = updates.first().update.animeId
-                val anime = getAnime.await(animeId) ?: continue
-                // Don't download if source isn't available
-                sourceManager.get(anime.source) ?: continue
-                val episodes = updates.mapNotNull { getEpisode.await(it.update.episodeId) }
-                downloadManager.downloadEpisodes(anime, episodes, true, alt)
-            }
-        }
+        // Episode downloads were removed from Mihono.
     }
 
     /**
@@ -267,17 +203,7 @@ class AnimeUpdatesScreenModel(
      * @param updatesItem list of episodes
      */
     fun deleteEpisodes(updatesItem: List<AnimeUpdatesItem>) {
-        screenModelScope.launchNonCancellable {
-            updatesItem
-                .groupBy { it.update.animeId }
-                .entries
-                .forEach { (animeId, updates) ->
-                    val anime = getAnime.await(animeId) ?: return@forEach
-                    val source = sourceManager.get(anime.source) ?: return@forEach
-                    val episodes = updates.mapNotNull { getEpisode.await(it.update.episodeId) }
-                    downloadManager.deleteEpisodes(episodes, anime, source)
-                }
-        }
+        // Episode downloads were removed from Mihono.
         toggleAllSelection(false)
     }
 

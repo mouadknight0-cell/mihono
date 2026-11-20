@@ -285,17 +285,7 @@ dependencies {
 
     testImplementation(kotlinx.coroutines.test)
 
-    // mpv-android
-    implementation(aniyomilibs.aniyomi.mpv)
-    // FFmpeg-kit
-    implementation(aniyomilibs.ffmpeg.kit)
-    implementation(aniyomilibs.arthenica.smartexceptions)
-    // TorrServer
-    implementation(aniyomilibs.torrserver)
-    // seeker seek bar
-    implementation(aniyomilibs.seeker)
     // true type parser
-    implementation(aniyomilibs.truetypeparser)
 }
 
 androidComponents {

@@ -1,8 +1,6 @@
 package eu.kanade.tachiyomi.ui.main
 
 import android.animation.ValueAnimator
-import android.app.Activity
-import android.app.Application
 import android.app.SearchManager
 import android.app.assist.AssistContent
 import android.content.Context
@@ -14,9 +12,6 @@ import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -69,8 +64,6 @@ import eu.kanade.presentation.more.settings.screen.data.RestoreBackupScreen
 import eu.kanade.presentation.util.AssistContentScreen
 import eu.kanade.presentation.util.DefaultNavigatorScreenTransition
 import eu.kanade.tachiyomi.BuildConfig
-import eu.kanade.tachiyomi.animesource.model.Hoster
-import eu.kanade.tachiyomi.animesource.model.Video
 import eu.kanade.tachiyomi.core.common.Constants
 import eu.kanade.tachiyomi.data.cache.ChapterCache
 import eu.kanade.tachiyomi.data.download.manga.MangaDownloadCache
@@ -81,18 +74,14 @@ import eu.kanade.tachiyomi.extension.manga.api.MangaExtensionApi
 import eu.kanade.tachiyomi.ui.base.activity.BaseActivity
 import eu.kanade.tachiyomi.ui.browse.manga.source.browse.BrowseMangaSourceScreen
 import eu.kanade.tachiyomi.ui.browse.manga.source.globalsearch.GlobalMangaSearchScreen
-import eu.kanade.tachiyomi.ui.deeplink.DeepLinkScreenType
 import eu.kanade.tachiyomi.ui.deeplink.manga.DeepLinkMangaScreen
 import eu.kanade.tachiyomi.ui.entries.manga.MangaScreen
 import eu.kanade.tachiyomi.ui.home.HomeScreen
 import eu.kanade.tachiyomi.ui.more.NewUpdateScreen
 import eu.kanade.tachiyomi.ui.more.OnboardingScreen
-import eu.kanade.tachiyomi.ui.player.ExternalIntents
-import eu.kanade.tachiyomi.ui.player.PlayerActivity
 import eu.kanade.tachiyomi.util.system.dpToPx
 import eu.kanade.tachiyomi.util.system.isNavigationBarNeedsScrim
 import eu.kanade.tachiyomi.util.system.openInBrowser
-import eu.kanade.tachiyomi.util.system.toast
 import eu.kanade.tachiyomi.util.system.updaterEnabled
 import eu.kanade.tachiyomi.util.view.setComposeContent
 import kotlinx.coroutines.channels.awaitClose
@@ -103,19 +92,16 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
 import mihon.core.migration.Migrator
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.lang.launchIO
-import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.release.interactor.GetApplicationRelease
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.util.collectAsState
-import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import uy.kohesive.injekt.injectLazy
 
@@ -298,13 +284,6 @@ class MainActivity : BaseActivity() {
             }
         }
 
-        externalPlayerResult = registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult(),
-        ) { result: ActivityResult ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                ExternalIntents.externalIntents.onActivityResult(result.data)
-            }
-        }
     }
 
     override fun onProvideAssistContent(outContent: AssistContent) {
@@ -492,56 +471,11 @@ class MainActivity : BaseActivity() {
         return true
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-
-        ExternalIntents.externalIntents.episodeId?.let {
-            outState.putLong(SAVED_STATE_EPISODE_KEY, it)
-        }
-    }
-
     companion object {
         const val INTENT_SEARCH = "eu.kanade.tachiyomi.SEARCH"
         const val INTENT_SEARCH_QUERY = "query"
         const val INTENT_SEARCH_FILTER = "filter"
         const val INTENT_SEARCH_TYPE = "type"
-
-        const val SAVED_STATE_EPISODE_KEY = "saved_state_episode_key"
-
-        private var externalPlayerResult: ActivityResultLauncher<Intent>? = null
-
-        suspend fun startPlayerActivity(
-            context: Context,
-            animeId: Long,
-            episodeId: Long,
-            extPlayer: Boolean,
-            video: Video? = null,
-            hosterIndex: Int = -1,
-            videoIndex: Int = -1,
-            hosterList: List<Hoster>? = null,
-        ) {
-            if (extPlayer) {
-                val intent = try {
-                    ExternalIntents.newIntent(context, animeId, episodeId, video)
-                } catch (e: Exception) {
-                    logcat(LogPriority.ERROR, e)
-                    withUIContext { Injekt.get<Application>().toast(e.message) }
-                    null
-                } ?: return
-                externalPlayerResult?.launch(intent) ?: return
-            } else {
-                context.startActivity(
-                    PlayerActivity.newIntent(
-                        context,
-                        animeId,
-                        episodeId,
-                        hosterList,
-                        hosterIndex,
-                        videoIndex,
-                    ),
-                )
-            }
-        }
     }
 }
 

@@ -53,7 +53,6 @@ import eu.kanade.presentation.util.relativeTimeSpanString
 import eu.kanade.tachiyomi.data.backup.create.BackupCreateJob
 import eu.kanade.tachiyomi.data.backup.restore.BackupRestoreJob
 import eu.kanade.tachiyomi.data.cache.ChapterCache
-import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadCache
 import eu.kanade.tachiyomi.data.download.manga.MangaDownloadCache
 import eu.kanade.tachiyomi.data.export.ExportEntry
 import eu.kanade.tachiyomi.data.export.ExportEntry.Companion.toExportEntry
@@ -201,8 +200,7 @@ object SettingsDataScreen : SearchableSettings {
             subtitle = stringResource(AYMR.strings.pref_invalidate_download_cache_summary),
             onClick = {
                 Injekt.get<MangaDownloadCache>().invalidateCache()
-                Injekt.get<AnimeDownloadCache>().invalidateCache()
-                context.toast(MR.strings.download_cache_invalidated)
+                    context.toast(MR.strings.download_cache_invalidated)
             },
         )
     }

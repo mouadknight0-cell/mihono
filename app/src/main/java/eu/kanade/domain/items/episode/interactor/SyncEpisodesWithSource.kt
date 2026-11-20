@@ -7,8 +7,6 @@ import eu.kanade.domain.items.episode.model.toSEpisode
 import eu.kanade.tachiyomi.animesource.AnimeSource
 import eu.kanade.tachiyomi.animesource.model.SEpisode
 import eu.kanade.tachiyomi.animesource.online.AnimeHttpSource
-import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadManager
-import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadProvider
 import tachiyomi.data.items.episode.EpisodeSanitizer
 import tachiyomi.domain.entries.anime.model.Anime
 import tachiyomi.domain.items.episode.interactor.GetEpisodesByAnimeId
@@ -26,8 +24,6 @@ import java.time.ZonedDateTime
 import java.util.TreeSet
 
 class SyncEpisodesWithSource(
-    private val downloadManager: AnimeDownloadManager,
-    private val downloadProvider: AnimeDownloadProvider,
     private val episodeRepository: EpisodeRepository,
     private val shouldUpdateDbEpisode: ShouldUpdateDbEpisode,
     private val updateAnime: UpdateAnime,
@@ -112,20 +108,6 @@ class SyncEpisodesWithSource(
                 newEpisodes.add(toAddEpisode)
             } else {
                 if (shouldUpdateDbEpisode.await(dbEpisode, episode)) {
-                    val shouldRenameEpisode = downloadProvider.isEpisodeDirNameChanged(
-                        dbEpisode,
-                        episode,
-                    ) &&
-                        downloadManager.isEpisodeDownloaded(
-                            dbEpisode.name,
-                            dbEpisode.scanlator,
-                            anime.title,
-                            anime.source,
-                        )
-
-                    if (shouldRenameEpisode) {
-                        downloadManager.renameEpisode(source, anime, dbEpisode, episode)
-                    }
                     var toChangeEpisode = dbEpisode.copy(
                         name = episode.name,
                         episodeNumber = episode.episodeNumber,

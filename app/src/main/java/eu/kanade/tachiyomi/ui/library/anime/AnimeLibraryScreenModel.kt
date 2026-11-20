@@ -24,12 +24,9 @@ import eu.kanade.presentation.components.SEARCH_DEBOUNCE_MILLIS
 import eu.kanade.presentation.entries.DownloadAction
 import eu.kanade.presentation.library.components.LibraryToolbarTitle
 import eu.kanade.tachiyomi.animesource.model.SAnime
-import eu.kanade.tachiyomi.animesource.online.AnimeHttpSource
 import eu.kanade.tachiyomi.data.cache.AnimeBackgroundCache
 import eu.kanade.tachiyomi.data.cache.AnimeCoverCache
 import eu.kanade.tachiyomi.data.cache.SeriesCoverCache
-import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadCache
-import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadManager
 import eu.kanade.tachiyomi.data.track.AnimeTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.ui.library.LibraryGroupMode
@@ -110,8 +107,6 @@ class AnimeLibraryScreenModel(
     private val coverCache: AnimeCoverCache = Injekt.get(),
     private val backgroundCache: AnimeBackgroundCache = Injekt.get(),
     private val sourceManager: AnimeSourceManager = Injekt.get(),
-    private val downloadManager: AnimeDownloadManager = Injekt.get(),
-    private val downloadCache: AnimeDownloadCache = Injekt.get(),
     private val trackerManager: TrackerManager = Injekt.get(),
 ) : StateScreenModel<AnimeLibraryScreenModel.State>(State()) {
 
@@ -133,8 +128,7 @@ class AnimeLibraryScreenModel(
                 getLibraryFlow(),
                 getTracksPerAnime.subscribe(),
                 getTrackingFilterFlow(),
-                downloadCache.changes,
-            ) { searchQuery, library, tracks, trackingFilter, _ ->
+            ) { searchQuery, library, tracks, trackingFilter ->
                 val sorted = library
                     .applyFilters(tracks, trackingFilter)
                     .applySort(tracks, trackingFilter.keys)
@@ -252,8 +246,7 @@ class AnimeLibraryScreenModel(
         val filterFnDownloaded: (AnimeLibraryItem) -> Boolean = {
             applyFilter(filterDownloaded) {
                 it.libraryAnime.anime.isLocal() ||
-                    it.downloadCount > 0 ||
-                    downloadManager.getDownloadCount(it.libraryAnime.anime) > 0
+                    it.downloadCount > 0
             }
         }
 
@@ -509,21 +502,16 @@ class AnimeLibraryScreenModel(
         val animelibAnimesFlow = combine(
             getLibraryAnime.subscribe(),
             getAnimelibItemPreferencesFlow(),
-            downloadCache.changes,
             libraryPreferences.pinnedAnimeIds().changes(),
             libraryPreferences.seriesGroupingsAnime().changes(),
-        ) { animelibAnimeList, prefs, _, pinnedIds, seriesSet ->
+        ) { animelibAnimeList, prefs, pinnedIds, seriesSet ->
             val seriesById = SeriesGrouping.decode(seriesSet)
             animelibAnimeList
                 .map { animelibAnime ->
                     // Display mode based on user preference: take it from global library setting or category
                     AnimeLibraryItem(
                         animelibAnime,
-                        downloadCount = if (prefs.downloadBadge) {
-                            downloadManager.getDownloadCount(animelibAnime.anime).toLong()
-                        } else {
-                            0
-                        },
+                        downloadCount = 0,
                         unseenCount = if (prefs.unseenBadge) animelibAnime.unseenCount else 0,
                         isLocal = if (prefs.localBadge) animelibAnime.anime.isLocal() else false,
                         sourceLanguage = if (prefs.languageBadge) {
@@ -703,7 +691,7 @@ class AnimeLibraryScreenModel(
     }
 
     suspend fun getNextUnseenEpisode(anime: Anime): Episode? {
-        return getEpisodesByAnimeId.await(anime.id).getNextUnseen(anime, downloadManager)
+        return getEpisodesByAnimeId.await(anime.id).getNextUnseen(anime)
     }
 
     /**
@@ -738,23 +726,7 @@ class AnimeLibraryScreenModel(
      * @param amount the amount to queue or null to queue all
      */
     private fun downloadUnseenEpisodes(animes: List<Anime>, amount: Int?) {
-        screenModelScope.launchNonCancellable {
-            animes.forEach { anime ->
-                val episodes = getNextEpisodes.await(anime.id)
-                    .fastFilterNot { episode ->
-                        downloadManager.getQueuedDownloadOrNull(episode.id) != null ||
-                            downloadManager.isEpisodeDownloaded(
-                                episode.name,
-                                episode.scanlator,
-                                anime.title,
-                                anime.source,
-                            )
-                    }
-                    .let { if (amount != null) it.take(amount) else it }
-
-                downloadManager.downloadEpisodes(anime, episodes)
-            }
-        }
+        // Episode downloads were removed from Mihono.
     }
 
     /**
@@ -949,14 +921,6 @@ class AnimeLibraryScreenModel(
                 updateAnime.awaitAll(toDelete)
             }
 
-            if (deleteEpisodes) {
-                animeToDelete.forEach { anime ->
-                    val source = sourceManager.get(anime.source) as? AnimeHttpSource
-                    if (source != null) {
-                        downloadManager.deleteAnime(anime, source)
-                    }
-                }
-            }
         }
     }
 

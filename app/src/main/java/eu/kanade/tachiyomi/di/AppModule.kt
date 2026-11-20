@@ -6,8 +6,6 @@ import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
-import aniyomi.core.common.torrent.TorrentServerApi
-import aniyomi.core.common.torrent.TorrentServerUtils
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import data.Chapters
 import data.History
@@ -21,9 +19,6 @@ import eu.kanade.tachiyomi.data.cache.AnimeBackgroundCache
 import eu.kanade.tachiyomi.data.cache.AnimeCoverCache
 import eu.kanade.tachiyomi.data.cache.ChapterCache
 import eu.kanade.tachiyomi.data.cache.MangaCoverCache
-import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadCache
-import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadManager
-import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadProvider
 import eu.kanade.tachiyomi.data.download.manga.MangaDownloadCache
 import eu.kanade.tachiyomi.data.download.manga.MangaDownloadManager
 import eu.kanade.tachiyomi.data.download.manga.MangaDownloadProvider
@@ -35,7 +30,6 @@ import eu.kanade.tachiyomi.network.JavaScriptEngine
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.anime.AndroidAnimeSourceManager
 import eu.kanade.tachiyomi.source.manga.AndroidMangaSourceManager
-import eu.kanade.tachiyomi.ui.player.ExternalIntents
 import io.requery.android.database.sqlite.RequerySQLiteOpenHelperFactory
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
@@ -214,9 +208,6 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { MangaDownloadManager(app) }
         addSingletonFactory { MangaDownloadCache(app) }
 
-        addSingletonFactory { AnimeDownloadProvider(app) }
-        addSingletonFactory { AnimeDownloadManager(app) }
-        addSingletonFactory { AnimeDownloadCache(app) }
 
         addSingletonFactory { TrackerManager(app) }
         addSingletonFactory { DelayedAnimeTrackingStore(app) }
@@ -237,10 +228,6 @@ class AppModule(val app: Application) : InjektModule {
 
         addSingletonFactory { StorageManager(app, get()) }
 
-        addSingletonFactory { ExternalIntents() }
-
-        addSingletonFactory { TorrentServerApi(get(), get()) }
-        addSingletonFactory { TorrentServerUtils(get(), get()) }
 
         // Asynchronously init expensive components for a faster cold start
         ContextCompat.getMainExecutor(app).execute {
@@ -253,7 +240,6 @@ class AppModule(val app: Application) : InjektModule {
             get<AnimeDatabase>()
 
             get<MangaDownloadManager>()
-            get<AnimeDownloadManager>()
         }
     }
 }

@@ -8,7 +8,6 @@ import eu.kanade.tachiyomi.animesource.AnimeSource
 import eu.kanade.tachiyomi.animesource.model.SEpisode
 import eu.kanade.tachiyomi.data.cache.AnimeBackgroundCache
 import eu.kanade.tachiyomi.data.cache.AnimeCoverCache
-import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadManager
 import eu.kanade.tachiyomi.data.track.EnhancedAnimeTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.ui.browse.anime.migration.AnimeMigrationFlags
@@ -33,7 +32,6 @@ import java.time.Instant
  */
 class MigrateAnime(
     private val sourceManager: AnimeSourceManager = Injekt.get(),
-    private val downloadManager: AnimeDownloadManager = Injekt.get(),
     private val updateAnime: UpdateAnime = Injekt.get(),
     private val getEpisodesByAnimeId: GetEpisodesByAnimeId = Injekt.get(),
     private val syncEpisodesWithSource: SyncEpisodesWithSource = Injekt.get(),
@@ -160,13 +158,6 @@ class MigrateAnime(
         }
             .takeIf { it.isNotEmpty() }
             ?.let { insertTrack.awaitAll(it) }
-
-        // Delete downloaded
-        if (deleteDownloaded) {
-            if (oldSource != null) {
-                downloadManager.deleteAnime(oldAnime, oldSource)
-            }
-        }
 
         if (replace) {
             updateAnime.awaitUpdateFavorite(oldAnime.id, favorite = false)

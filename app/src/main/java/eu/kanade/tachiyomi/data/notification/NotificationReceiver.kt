@@ -8,13 +8,11 @@ import android.net.Uri
 import androidx.core.net.toUri
 import eu.kanade.tachiyomi.core.common.Constants
 import eu.kanade.tachiyomi.data.backup.restore.BackupRestoreJob
-import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadManager
 import eu.kanade.tachiyomi.data.download.manga.MangaDownloadManager
 import eu.kanade.tachiyomi.data.library.anime.AnimeLibraryUpdateJob
 import eu.kanade.tachiyomi.data.library.manga.MangaLibraryUpdateJob
 import eu.kanade.tachiyomi.data.updater.AppUpdateDownloadJob
 import eu.kanade.tachiyomi.ui.main.MainActivity
-import eu.kanade.tachiyomi.ui.player.PlayerActivity
 import eu.kanade.tachiyomi.ui.reader.ReaderActivity
 import eu.kanade.tachiyomi.util.system.cancelNotification
 import eu.kanade.tachiyomi.util.system.getParcelableExtraCompat
@@ -59,7 +57,6 @@ class NotificationReceiver : BroadcastReceiver() {
     private val updateChapter: UpdateChapter by injectLazy()
     private val updateEpisode: UpdateEpisode by injectLazy()
     private val mangaDownloadManager: MangaDownloadManager by injectLazy()
-    private val animeDownloadManager: AnimeDownloadManager by injectLazy()
 
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
@@ -74,11 +71,11 @@ class NotificationReceiver : BroadcastReceiver() {
             ACTION_PAUSE_DOWNLOADS -> mangaDownloadManager.pauseDownloads()
             // Clear the download queue
             ACTION_CLEAR_DOWNLOADS -> mangaDownloadManager.clearQueue()
-            ACTION_RESUME_ANIME_DOWNLOADS -> animeDownloadManager.startDownloads()
+            ACTION_RESUME_ANIME_DOWNLOADS -> Unit
             // Pause the download service
-            ACTION_PAUSE_ANIME_DOWNLOADS -> animeDownloadManager.pauseDownloads()
+            ACTION_PAUSE_ANIME_DOWNLOADS -> Unit
             // Clear the download queue
-            ACTION_CLEAR_ANIME_DOWNLOADS -> animeDownloadManager.clearQueue()
+            ACTION_CLEAR_ANIME_DOWNLOADS -> Unit
             // Launch share activity and dismiss notification
             ACTION_SHARE_IMAGE ->
                 shareImage(
@@ -240,16 +237,12 @@ class NotificationReceiver : BroadcastReceiver() {
      * @param episodeId id of episode
      */
     private fun openEpisode(context: Context, animeId: Long, episodeId: Long) {
-        val anime = runBlocking { getAnime.await(animeId) }
-        val episode = runBlocking { getEpisode.await(episodeId) }
-        if (anime != null && episode != null) {
-            val intent = PlayerActivity.newIntent(context, anime.id, episode.id).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            }
-            context.startActivity(intent)
-        } else {
-            context.toast(context.stringResource(AYMR.strings.download_error))
-        }
+        // The video player was removed from Mihono; just open the app.
+        val intent = Intent(context, MainActivity::class.java)
+            .setAction(Constants.SHORTCUT_ANIME)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            .putExtra(Constants.ANIME_EXTRA, animeId)
+        context.startActivity(intent)
     }
 
     /**
@@ -331,15 +324,6 @@ class NotificationReceiver : BroadcastReceiver() {
             val toUpdate = episodeUrls.mapNotNull { getEpisode.await(it, animeId) }
                 .map {
                     val episode = it.copy(seen = true)
-                    if (downloadPreferences.removeAfterMarkedAsRead().get()) {
-                        val anime = getAnime.await(animeId)
-                        if (anime != null) {
-                            val source = sourceManager.get(anime.source)
-                            if (source != null) {
-                                animeDownloadManager.deleteEpisodes(listOf(it), anime, source)
-                            }
-                        }
-                    }
                     episode.toEpisodeUpdate()
                 }
             updateEpisode.awaitAll(toUpdate)
@@ -367,11 +351,7 @@ class NotificationReceiver : BroadcastReceiver() {
      * @param animeId id of manga
      */
     private fun downloadEpisodes(episodeUrls: Array<String>, animeId: Long) {
-        launchIO {
-            val anime = getAnime.await(animeId) ?: return@launchIO
-            val episodes = episodeUrls.mapNotNull { getEpisode.await(it, animeId) }
-            animeDownloadManager.downloadEpisodes(anime, episodes)
-        }
+        // Episode downloads were removed from Mihono.
     }
 
     companion object {
@@ -612,7 +592,9 @@ class NotificationReceiver : BroadcastReceiver() {
          * @param episode episode that needs to be opened
          */
         internal fun openEpisodePendingActivity(context: Context, anime: Anime, episode: Episode): PendingIntent {
-            val newIntent = PlayerActivity.newIntent(context, anime.id, episode.id)
+            val newIntent = Intent(context, MainActivity::class.java).setAction(Constants.SHORTCUT_ANIME)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                .putExtra(Constants.ANIME_EXTRA, anime.id)
             return PendingIntent.getActivity(
                 context,
                 anime.id.hashCode(),

@@ -33,7 +33,6 @@ import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.presentation.more.settings.screen.advanced.ClearAnimeDatabaseScreen
 import eu.kanade.presentation.more.settings.screen.advanced.ClearDatabaseScreen
 import eu.kanade.presentation.more.settings.screen.debug.DebugInfoScreen
-import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadCache
 import eu.kanade.tachiyomi.data.download.manga.MangaDownloadCache
 import eu.kanade.tachiyomi.data.library.anime.AnimeLibraryUpdateJob
 import eu.kanade.tachiyomi.data.library.anime.AnimeMetadataUpdateJob
@@ -198,8 +197,7 @@ object SettingsAdvancedScreen : SearchableSettings {
                     subtitle = stringResource(AYMR.strings.pref_invalidate_download_cache_summary),
                     onClick = {
                         Injekt.get<MangaDownloadCache>().invalidateCache()
-                        Injekt.get<AnimeDownloadCache>().invalidateCache()
-                        context.toast(MR.strings.download_cache_invalidated)
+                                    context.toast(MR.strings.download_cache_invalidated)
                     },
                 ),
                 Preference.PreferenceItem.TextPreference(

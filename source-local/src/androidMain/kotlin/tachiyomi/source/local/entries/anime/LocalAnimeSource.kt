@@ -11,7 +11,6 @@ import eu.kanade.tachiyomi.animesource.model.SAnime
 import eu.kanade.tachiyomi.animesource.model.SEpisode
 import eu.kanade.tachiyomi.animesource.model.Video
 import eu.kanade.tachiyomi.util.lang.compareToCaseInsensitiveNaturalOrder
-import eu.kanade.tachiyomi.util.storage.toFFmpegString
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
@@ -325,30 +324,7 @@ actual class LocalAnimeSource(
         tempFileSuffix: String,
         updateImage: (InputStream) -> Unit,
     ) {
-        val tempFile = File.createTempFile(
-            "tmp_",
-            tempFileSuffix,
-        )
-        val outFile = tempFile.path
-
-        val episodeName = episode.url.split('/', limit = 2).last()
-        val animeDir = fileSystem.getAnimeDirectory(anime.url)!!
-        val episodeFile = animeDir.findFile(episodeName)!!
-        val episodeFilename = { episodeFile.toFFmpegString(context) }
-
-        val ffProbe = com.arthenica.ffmpegkit.FFprobeKit.execute(
-            "-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"${episodeFilename()}\"",
-        )
-        val duration = ffProbe.allLogsAsString.trim().toFloat()
-        val second = duration.toInt() / 2
-
-        com.arthenica.ffmpegkit.FFmpegKit.execute(
-            "-ss $second -i \"${episodeFilename()}\" -frames:v 1 -update true \"$outFile\" -y",
-        )
-
-        if (tempFile.length() > 0L) {
-            updateImage(tempFile.inputStream())
-        }
+        // FFmpeg-based video thumbnails were removed from Mihono along with FFmpegKit.
     }
 
     companion object {

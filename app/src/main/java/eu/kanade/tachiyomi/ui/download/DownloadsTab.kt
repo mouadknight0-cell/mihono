@@ -60,9 +60,6 @@ import eu.kanade.presentation.components.DropdownMenu
 import eu.kanade.presentation.components.NestedMenuItem
 import eu.kanade.presentation.util.Tab
 import eu.kanade.tachiyomi.R
-import eu.kanade.tachiyomi.ui.download.anime.AnimeDownloadHeaderItem
-import eu.kanade.tachiyomi.ui.download.anime.AnimeDownloadQueueScreenModel
-import eu.kanade.tachiyomi.ui.download.anime.animeDownloadTab
 import eu.kanade.tachiyomi.ui.download.manga.MangaDownloadHeaderItem
 import eu.kanade.tachiyomi.ui.download.manga.MangaDownloadQueueScreenModel
 import eu.kanade.tachiyomi.ui.download.manga.mangaDownloadTab
@@ -93,18 +90,13 @@ data object DownloadsTab : Tab {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val scope = rememberCoroutineScope()
-        val animeScreenModel = rememberScreenModel { AnimeDownloadQueueScreenModel() }
         val mangaScreenModel = rememberScreenModel { MangaDownloadQueueScreenModel() }
-        val animeDownloadList by animeScreenModel.state.collectAsState()
         val mangaDownloadList by mangaScreenModel.state.collectAsState()
-        val animeDownloadCount by remember {
-            derivedStateOf { animeDownloadList.sumOf { it.subItems.size } }
-        }
         val mangaDownloadCount by remember {
             derivedStateOf { mangaDownloadList.sumOf { it.subItems.size } }
         }
 
-        val state = rememberPagerState { 2 }
+        val state = rememberPagerState { 1 }
         val snackbarHostState = remember { SnackbarHostState() }
 
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
@@ -142,10 +134,10 @@ data object DownloadsTab : Tab {
                                 modifier = Modifier.weight(1f, false),
                                 overflow = TextOverflow.Ellipsis,
                             )
-                            if (animeDownloadCount > 0) {
+                            if (mangaDownloadCount > 0) {
                                 val pillAlpha = if (isSystemInDarkTheme()) 0.12f else 0.08f
                                 Pill(
-                                    text = "$animeDownloadCount",
+                                    text = "$mangaDownloadCount",
                                     modifier = Modifier.padding(start = 4.dp),
                                     color = MaterialTheme.colorScheme.onBackground
                                         .copy(alpha = pillAlpha),
@@ -156,72 +148,40 @@ data object DownloadsTab : Tab {
                     },
                     navigateUp = navigator::pop,
                     actions = {
-                        when (state.currentPage) {
-                            0 -> AnimeActions(animeScreenModel, animeDownloadList)
-                            1 -> MangaActions(mangaScreenModel, mangaDownloadList)
-                        }
+                        MangaActions(mangaScreenModel, mangaDownloadList)
                     },
                     scrollBehavior = scrollBehavior,
                 )
             },
             floatingActionButton = {
                 AnimatedVisibility(
-                    visible = when (state.currentPage) {
-                        0 -> animeDownloadList.isNotEmpty()
-                        1 -> mangaDownloadList.isNotEmpty()
-                        else -> false
-                    },
+                    visible = mangaDownloadList.isNotEmpty(),
                     enter = fadeIn(),
                     exit = fadeOut(),
                 ) {
-                    val animeIsRunning by animeScreenModel.isDownloaderRunning.collectAsState()
                     val mangaIsRunning by mangaScreenModel.isDownloaderRunning.collectAsState()
                     ExtendedFloatingActionButton(
                         text = {
-                            val id = when (state.currentPage) {
-                                0 -> if (animeIsRunning) {
-                                    AYMR.strings.action_stop
-                                } else {
-                                    AYMR.strings.action_continue
-                                }
-                                1 -> if (mangaIsRunning) {
-                                    MR.strings.action_pause
-                                } else {
-                                    MR.strings.action_resume
-                                }
-                                else -> MR.strings.action_pause
+                            val id = if (mangaIsRunning) {
+                                MR.strings.action_pause
+                            } else {
+                                MR.strings.action_resume
                             }
                             Text(text = stringResource(id))
                         },
                         icon = {
-                            val icon = when (state.currentPage) {
-                                0 -> if (animeIsRunning) {
-                                    Icons.Outlined.Pause
-                                } else {
-                                    Icons.Filled.PlayArrow
-                                }
-                                1 -> if (mangaIsRunning) {
-                                    Icons.Outlined.Pause
-                                } else {
-                                    Icons.Filled.PlayArrow
-                                }
-                                else -> Icons.Filled.PlayArrow
+                            val icon = if (mangaIsRunning) {
+                                Icons.Outlined.Pause
+                            } else {
+                                Icons.Filled.PlayArrow
                             }
                             Icon(imageVector = icon, contentDescription = null)
                         },
                         onClick = {
-                            when (state.currentPage) {
-                                0 -> if (animeIsRunning) {
-                                    animeScreenModel.pauseDownloads()
-                                } else {
-                                    animeScreenModel.startDownloads()
-                                }
-
-                                1 -> if (mangaIsRunning) {
-                                    mangaScreenModel.pauseDownloads()
-                                } else {
-                                    mangaScreenModel.startDownloads()
-                                }
+                            if (mangaIsRunning) {
+                                mangaScreenModel.pauseDownloads()
+                            } else {
+                                mangaScreenModel.startDownloads()
                             }
                         },
                         expanded = fabExpanded,
@@ -246,17 +206,6 @@ data object DownloadsTab : Tab {
                             onClick = { scope.launch { state.animateScrollToPage(0) } },
                             text = {
                                 TabText(
-                                    text = stringResource(AYMR.strings.label_anime),
-                                    badgeCount = animeDownloadCount,
-                                )
-                            },
-                            unselectedContentColor = MaterialTheme.colorScheme.onSurface,
-                        ),
-                        Tab(
-                            selected = state.currentPage == 1,
-                            onClick = { scope.launch { state.animateScrollToPage(1) } },
-                            text = {
-                                TabText(
                                     text = stringResource(AYMR.strings.manga),
                                     badgeCount = mangaDownloadCount,
                                 )
@@ -273,13 +222,7 @@ data object DownloadsTab : Tab {
                     pageNestedScrollConnection = nestedScrollConnection,
                 ) { page ->
                     when (page) {
-                        0 -> animeDownloadTab(
-                            nestedScrollConnection,
-                        ).content(
-                            PaddingValues(bottom = contentPadding.calculateBottomPadding()),
-                            snackbarHostState,
-                        )
-                        1 -> mangaDownloadTab(
+                        0 -> mangaDownloadTab(
                             nestedScrollConnection,
                         ).content(
                             PaddingValues(bottom = contentPadding.calculateBottomPadding()),
@@ -288,90 +231,6 @@ data object DownloadsTab : Tab {
                     }
                 }
             }
-        }
-    }
-
-    @Composable
-    private fun AnimeActions(
-        animeScreenModel: AnimeDownloadQueueScreenModel,
-        animeDownloadList: List<AnimeDownloadHeaderItem>,
-    ) {
-        if (animeDownloadList.isNotEmpty()) {
-            var sortExpanded by remember { mutableStateOf(false) }
-            val onDismissRequest = { sortExpanded = false }
-            DropdownMenu(
-                expanded = sortExpanded,
-                onDismissRequest = onDismissRequest,
-            ) {
-                NestedMenuItem(
-                    text = { Text(text = stringResource(MR.strings.action_order_by_upload_date)) },
-                    children = { closeMenu ->
-                        DropdownMenuItem(
-                            text = { Text(text = stringResource(MR.strings.action_newest)) },
-                            onClick = {
-                                animeScreenModel.reorderQueue(
-                                    { it.download.episode.dateUpload },
-                                    true,
-                                )
-                                closeMenu()
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(text = stringResource(MR.strings.action_oldest)) },
-                            onClick = {
-                                animeScreenModel.reorderQueue(
-                                    { it.download.episode.dateUpload },
-                                    false,
-                                )
-                                closeMenu()
-                            },
-                        )
-                    },
-                )
-                NestedMenuItem(
-                    text = {
-                        Text(
-                            text = stringResource(AYMR.strings.action_order_by_episode_number),
-                        )
-                    },
-                    children = { closeMenu ->
-                        DropdownMenuItem(
-                            text = { Text(text = stringResource(MR.strings.action_asc)) },
-                            onClick = {
-                                animeScreenModel.reorderQueue(
-                                    { it.download.episode.episodeNumber },
-                                    false,
-                                )
-                                closeMenu()
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(text = stringResource(MR.strings.action_desc)) },
-                            onClick = {
-                                animeScreenModel.reorderQueue(
-                                    { it.download.episode.episodeNumber },
-                                    true,
-                                )
-                                closeMenu()
-                            },
-                        )
-                    },
-                )
-            }
-
-            AppBarActions(
-                persistentListOf(
-                    AppBar.Action(
-                        title = stringResource(MR.strings.action_sort),
-                        icon = Icons.AutoMirrored.Outlined.Sort,
-                        onClick = { sortExpanded = true },
-                    ),
-                    AppBar.OverflowAction(
-                        title = stringResource(MR.strings.action_cancel_all),
-                        onClick = { animeScreenModel.clearQueue() },
-                    ),
-                ),
-            )
         }
     }
 

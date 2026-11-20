@@ -22,7 +22,6 @@ import eu.kanade.tachiyomi.data.backup.restore.restorers.MangaExtensionRepoResto
 import eu.kanade.tachiyomi.data.backup.restore.restorers.MangaRestorer
 import eu.kanade.tachiyomi.data.backup.restore.restorers.NovelCategoriesRestorer
 import eu.kanade.tachiyomi.data.backup.restore.restorers.PreferenceRestorer
-import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadCache
 import eu.kanade.tachiyomi.data.download.manga.MangaDownloadCache
 import eu.kanade.tachiyomi.util.system.createFileInCacheDir
 import kotlinx.coroutines.CoroutineScope
@@ -74,7 +73,6 @@ class BackupRestorer(
         // Re-scan on-disk downloads so restored library entries show their existing downloads
         if (options.libraryEntries) {
             Injekt.get<MangaDownloadCache>().invalidateCache()
-            Injekt.get<AnimeDownloadCache>().invalidateCache()
         }
 
         val time = System.currentTimeMillis() - startTime

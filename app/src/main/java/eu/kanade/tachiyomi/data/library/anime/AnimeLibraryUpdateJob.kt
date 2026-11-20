@@ -26,7 +26,6 @@ import eu.kanade.tachiyomi.animesource.model.FetchType
 import eu.kanade.tachiyomi.animesource.model.SAnime
 import eu.kanade.tachiyomi.data.cache.AnimeBackgroundCache
 import eu.kanade.tachiyomi.data.cache.AnimeCoverCache
-import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadManager
 import eu.kanade.tachiyomi.data.notification.Notifications
 import eu.kanade.tachiyomi.util.storage.getUriCompat
 import eu.kanade.tachiyomi.util.system.createFileInCacheDir
@@ -42,7 +41,6 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import logcat.LogPriority
-import mihon.domain.items.episode.interactor.FilterEpisodesForDownload
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.preference.getAndSet
 import tachiyomi.core.common.util.lang.withIOContext
@@ -76,7 +74,6 @@ import java.time.Instant
 import java.time.ZonedDateTime
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerParameters) :
@@ -84,7 +81,6 @@ class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
 
     private val sourceManager: AnimeSourceManager = Injekt.get()
     private val libraryPreferences: LibraryPreferences = Injekt.get()
-    private val downloadManager: AnimeDownloadManager = Injekt.get()
     private val coverCache: AnimeCoverCache = Injekt.get()
     private val backgroundCache: AnimeBackgroundCache = Injekt.get()
     private val getLibraryAnime: GetLibraryAnime = Injekt.get()
@@ -92,7 +88,6 @@ class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
     private val updateAnime: UpdateAnime = Injekt.get()
     private val syncEpisodesWithSource: SyncEpisodesWithSource = Injekt.get()
     private val animeFetchInterval: AnimeFetchInterval = Injekt.get()
-    private val filterEpisodesForDownload: FilterEpisodesForDownload = Injekt.get()
     private val getAnimeSeasonsByParentId: GetAnimeSeasonsByParentId = Injekt.get()
 
     private val notifier = AnimeLibraryUpdateNotifier(context)
@@ -282,7 +277,6 @@ class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
         val currentlyUpdatingAnime = CopyOnWriteArrayList<Anime>()
         val newUpdates = CopyOnWriteArrayList<Pair<Anime, Array<Episode>>>()
         val failedUpdates = CopyOnWriteArrayList<Pair<Anime, String?>>()
-        val hasDownloads = AtomicBoolean(false)
         val fetchWindow = animeFetchInterval.getWindow(ZonedDateTime.now())
 
         coroutineScope {
@@ -309,13 +303,6 @@ class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
                                             .sortedByDescending { it.sourceOrder }
 
                                         if (newEpisodes.isNotEmpty()) {
-                                            val episodesToDownload = filterEpisodesForDownload.await(anime, newEpisodes)
-
-                                            if (episodesToDownload.isNotEmpty()) {
-                                                downloadEpisodes(anime, episodesToDownload)
-                                                hasDownloads.set(true)
-                                            }
-
                                             libraryPreferences.newAnimeUpdatesCount()
                                                 .getAndSet { it + newEpisodes.size }
 
@@ -347,9 +334,6 @@ class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
 
         if (newUpdates.isNotEmpty()) {
             notifier.showUpdateNotifications(newUpdates)
-            if (hasDownloads.get()) {
-                downloadManager.startDownloads()
-            }
         }
 
         if (failedUpdates.isNotEmpty()) {
@@ -365,12 +349,6 @@ class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
         if (newUpdates.isEmpty() && failedUpdates.isEmpty() && tags.contains(WORK_NAME_MANUAL)) {
             notifier.showUpdateUpToDateNotification()
         }
-    }
-
-    private fun downloadEpisodes(anime: Anime, episodes: List<Episode>) {
-        // We don't want to start downloading while the library is updating, because websites
-        // may don't like it and they could ban the user.
-        downloadManager.downloadEpisodes(anime, episodes, false)
     }
 
     /**

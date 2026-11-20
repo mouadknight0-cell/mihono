@@ -49,11 +49,6 @@ dependencies {
     // JavaScript engine
     implementation(libs.bundles.js.engine)
 
-    // FFmpeg-kit
-    implementation(aniyomilibs.ffmpeg.kit)
-
-    // TorrServer
-    implementation(aniyomilibs.torrserver)
 
     // Tests
     testImplementation(libs.bundles.test)

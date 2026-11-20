@@ -4,7 +4,6 @@ import android.content.Context
 import eu.kanade.tachiyomi.animesource.AnimeCatalogueSource
 import eu.kanade.tachiyomi.animesource.AnimeSource
 import eu.kanade.tachiyomi.animesource.online.AnimeHttpSource
-import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadManager
 import eu.kanade.tachiyomi.extension.anime.AnimeExtensionManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,7 +22,6 @@ import tachiyomi.domain.source.anime.service.AnimeSourceManager
 import tachiyomi.source.local.entries.anime.LocalAnimeSource
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-import uy.kohesive.injekt.injectLazy
 import java.util.concurrent.ConcurrentHashMap
 
 class AndroidAnimeSourceManager(
@@ -35,7 +33,6 @@ class AndroidAnimeSourceManager(
     private val _isInitialized = MutableStateFlow(false)
     override val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
 
-    private val downloadManager: AnimeDownloadManager by injectLazy()
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
@@ -109,9 +106,6 @@ class AndroidAnimeSourceManager(
             val dbSource = sourceRepository.getStubAnimeSource(source.id)
             if (dbSource == source) return@launch
             sourceRepository.upsertStubAnimeSource(source.id, source.lang, source.name)
-            if (dbSource != null) {
-                downloadManager.renameSource(dbSource, source)
-            }
         }
     }
 

@@ -108,6 +108,8 @@ class MangaDownloadStore(
             .mapNotNull { it.value as? String }
             .mapNotNull { deserialize(it) }
             .sortedBy { it.order }
+            // Guard against duplicate queue entries for the same chapter.
+            .distinctBy { it.chapterId }
 
         val downloads = mutableListOf<MangaDownload>()
         if (objs.isNotEmpty()) {
@@ -118,12 +120,13 @@ class MangaDownloadStore(
                 } ?: continue
                 val source = sourceManager.get(manga.source) as? HttpSource ?: continue
                 val chapter = runBlocking { getChapter.await(chapterId) } ?: continue
+                // Never re-queue a chapter that already finished downloading.
+                val persisted = MangaDownload.persistedStatus(chapter.id)
+                if (persisted == MangaDownload.State.DOWNLOADED) continue
                 val download = MangaDownload(source, manga, chapter)
                 // Restore the persisted status (QUEUE/DOWNLOADING/ERROR) so partially downloaded
                 // or queued chapters come back to the queue after a restart.
-                MangaDownload.persistedStatus(chapter.id)?.let { status ->
-                    download.restoreStatus(status)
-                }
+                persisted?.let { status -> download.restoreStatus(status) }
                 downloads.add(download)
             }
         }

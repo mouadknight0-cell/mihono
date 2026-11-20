@@ -1,5 +1,7 @@
 package eu.kanade.tachiyomi.data.download.manga.model
 
+import android.content.SharedPreferences
+
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.delay
@@ -44,10 +46,17 @@ data class MangaDownload(
         set(status) {
             _statusFlow.value = status
             try {
-                Injekt.get<SharedPreferences>()
-                    .edit()
-                    .putInt(KEY_PREFIX_PENDING + chapter.id, status.value)
-                    .apply()
+                val editor = Injekt.get<SharedPreferences>().edit()
+                // Only persist states that must survive a restart. DOWNLOADED chapters are removed
+                // from the queue by the downloader and must not be re-queued, and NOT_DOWNLOADED
+                // means the chapter left the queue, so clear any stale persisted entry instead.
+                when (status) {
+                    State.QUEUE, State.DOWNLOADING, State.ERROR ->
+                        editor.putInt(KEY_PREFIX_PENDING + chapter.id, status.value)
+                    State.DOWNLOADED, State.NOT_DOWNLOADED ->
+                        editor.remove(KEY_PREFIX_PENDING + chapter.id)
+                }
+                editor.apply()
             } catch (e: Exception) {
                 // Never crash the downloader for persistence failures.
             }

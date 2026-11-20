@@ -10,7 +10,6 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.QueryStats
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Storage
-import androidx.compose.material.icons.outlined.VideoSettings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -43,7 +42,6 @@ fun MoreScreen(
     onClickStats: () -> Unit,
     onClickStorage: () -> Unit,
     onClickDataAndStorage: () -> Unit,
-    onClickPlayerSettings: () -> Unit,
     onClickSettings: () -> Unit,
     onClickAbout: () -> Unit,
 ) {
@@ -148,13 +146,6 @@ fun MoreScreen(
                     title = stringResource(MR.strings.label_settings),
                     icon = Icons.Outlined.Settings,
                     onPreferenceClick = onClickSettings,
-                )
-            }
-            item {
-                TextPreferenceWidget(
-                    title = stringResource(AYMR.strings.label_player_settings),
-                    icon = Icons.Outlined.VideoSettings,
-                    onPreferenceClick = onClickPlayerSettings,
                 )
             }
             item {

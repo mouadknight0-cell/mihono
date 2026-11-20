@@ -11,12 +11,9 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.presentation.more.settings.Preference
-import eu.kanade.presentation.more.settings.screen.browse.AnimeExtensionReposScreen
 import eu.kanade.presentation.more.settings.screen.browse.MangaExtensionReposScreen
-import eu.kanade.presentation.more.settings.screen.browse.NovelExtensionReposScreen
 import eu.kanade.tachiyomi.util.system.AuthenticatorUtil.authenticate
 import kotlinx.collections.immutable.persistentListOf
-import mihon.domain.extensionrepo.anime.interactor.GetAnimeExtensionRepoCount
 import mihon.domain.extensionrepo.manga.interactor.GetMangaExtensionRepoCount
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.i18n.MR
@@ -39,35 +36,16 @@ object SettingsBrowseScreen : SearchableSettings {
 
         val sourcePreferences = remember { Injekt.get<SourcePreferences>() }
         val getMangaExtensionRepoCount = remember { Injekt.get<GetMangaExtensionRepoCount>() }
-        val getAnimeExtensionRepoCount = remember { Injekt.get<GetAnimeExtensionRepoCount>() }
 
         val mangaReposCount by getMangaExtensionRepoCount.subscribe().collectAsState(0)
-        val animeReposCount by getAnimeExtensionRepoCount.subscribe().collectAsState(0)
-        val novelRepos by sourcePreferences.novelExtensionRepos().changes()
-            .collectAsState(sourcePreferences.novelExtensionRepos().get())
 
         return listOf(
             Preference.PreferenceGroup(
                 title = stringResource(MR.strings.label_sources),
                 preferenceItems = persistentListOf(
                     Preference.PreferenceItem.SwitchPreference(
-                        preference = sourcePreferences.hideInAnimeLibraryItems(),
-                        title = stringResource(AYMR.strings.pref_hide_in_anime_library_items),
-                    ),
-                    Preference.PreferenceItem.SwitchPreference(
                         preference = sourcePreferences.hideInMangaLibraryItems(),
                         title = stringResource(AYMR.strings.pref_hide_in_manga_library_items),
-                    ),
-                    Preference.PreferenceItem.TextPreference(
-                        title = stringResource(AYMR.strings.label_anime_extension_repos),
-                        subtitle = pluralStringResource(
-                            MR.plurals.num_repos,
-                            animeReposCount,
-                            animeReposCount,
-                        ),
-                        onClick = {
-                            navigator.push(AnimeExtensionReposScreen())
-                        },
                     ),
                     Preference.PreferenceItem.TextPreference(
                         title = stringResource(AYMR.strings.label_manga_extension_repos),
@@ -78,17 +56,6 @@ object SettingsBrowseScreen : SearchableSettings {
                         ),
                         onClick = {
                             navigator.push(MangaExtensionReposScreen())
-                        },
-                    ),
-                    Preference.PreferenceItem.TextPreference(
-                        title = stringResource(AYMR.strings.label_novel_extension_repos),
-                        subtitle = pluralStringResource(
-                            MR.plurals.num_repos,
-                            novelRepos.size,
-                            novelRepos.size,
-                        ),
-                        onClick = {
-                            navigator.push(NovelExtensionReposScreen())
                         },
                     ),
                 ),

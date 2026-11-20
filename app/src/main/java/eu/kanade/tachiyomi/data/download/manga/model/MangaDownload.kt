@@ -24,6 +24,35 @@ data class MangaDownload(
     val chapter: Chapter,
 ) {
 
+    /**
+     * File backing per-chapter status (QUEUE/DOWNLOADING/ERROR) so the queue can report it and be
+     * restored after an app restart.
+     */
+    private val _statusFlow = MutableStateFlow(State.NOT_DOWNLOADED)
+    val statusFlow = _statusFlow.asStateFlow()
+
+    /**
+     * Sets the initial status from [MangaDownloadStore] when restoring after a restart. Restored
+     * state must not be persisted again.
+     */
+    fun restoreStatus(status: State) {
+        _statusFlow.value = status
+    }
+
+    var status: State
+        get() = _statusFlow.value
+        set(status) {
+            _statusFlow.value = status
+            try {
+                Injekt.get<SharedPreferences>()
+                    .edit()
+                    .putInt(KEY_PREFIX_PENDING + chapter.id, status.value)
+                    .apply()
+            } catch (e: Exception) {
+                // Never crash the downloader for persistence failures.
+            }
+        }
+
     var pages: List<Page>? = null
 
     val totalProgress: Int
@@ -31,17 +60,6 @@ data class MangaDownload(
 
     val downloadedImages: Int
         get() = pages?.count { it.status == Page.State.READY } ?: 0
-
-    @Transient
-    private val _statusFlow = MutableStateFlow(State.NOT_DOWNLOADED)
-
-    @Transient
-    val statusFlow = _statusFlow.asStateFlow()
-    var status: State
-        get() = _statusFlow.value
-        set(status) {
-            _statusFlow.value = status
-        }
 
     @Transient
     val progressFlow = flow {
@@ -73,6 +91,23 @@ data class MangaDownload(
     }
 
     companion object {
+        const val KEY_PREFIX_PENDING = "dl_pending_"
+        private const val NO_PERSISTED_STATUS = -1
+
+        /**
+         * Reads the persisted status for [chapterId], or null if none.
+         */
+        fun persistedStatus(chapterId: Long): State? {
+            val raw = try {
+                Injekt.get<SharedPreferences>()
+                    .getInt(KEY_PREFIX_PENDING + chapterId, NO_PERSISTED_STATUS)
+            } catch (e: Exception) {
+                NO_PERSISTED_STATUS
+            }
+            if (raw == NO_PERSISTED_STATUS) return null
+            return State.entries.firstOrNull { it.value == raw }
+        }
+
         suspend fun fromChapterId(
             chapterId: Long,
             getChapter: GetChapter = Injekt.get(),

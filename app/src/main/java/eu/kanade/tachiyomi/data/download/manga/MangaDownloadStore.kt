@@ -32,6 +32,11 @@ class MangaDownloadStore(
     private val preferences = context.getSharedPreferences("active_downloads", Context.MODE_PRIVATE)
 
     /**
+     * Preference file where per-chapter persisted statuses live.
+     */
+    private val pendingPreference = context.getSharedPreferences("pending_downloads", Context.MODE_PRIVATE)
+
+    /**
      * Counter used to keep the queue order.
      */
     private var counter = 0
@@ -76,6 +81,14 @@ class MangaDownloadStore(
         preferences.edit {
             clear()
         }
+        val staleKeys = pendingPreference.all.keys
+            .filter { it.startsWith(MangaDownload.KEY_PREFIX_PENDING) }
+        if (staleKeys.isNotEmpty()) {
+            pendingPreference.edit {
+                staleKeys.forEach { remove(it) }
+                apply()
+            }
+        }
     }
 
     /**
@@ -105,11 +118,18 @@ class MangaDownloadStore(
                 } ?: continue
                 val source = sourceManager.get(manga.source) as? HttpSource ?: continue
                 val chapter = runBlocking { getChapter.await(chapterId) } ?: continue
-                downloads.add(MangaDownload(source, manga, chapter))
+                val download = MangaDownload(source, manga, chapter)
+                // Restore the persisted status (QUEUE/DOWNLOADING/ERROR) so partially downloaded
+                // or queued chapters come back to the queue after a restart.
+                MangaDownload.persistedStatus(chapter.id)?.let { status ->
+                    download.restoreStatus(status)
+                }
+                downloads.add(download)
             }
         }
 
-        // Clear the store, downloads will be added again immediately.
+        // Clear the store (including persisted statuses), downloads will be added again
+        // immediately and their status restored from the persisted preference.
         clear()
         return downloads
     }

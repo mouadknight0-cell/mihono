@@ -45,7 +45,7 @@ fun Screen.mangaSourcesTab(
             AppBar.Action(
                 title = stringResource(MR.strings.action_global_search),
                 icon = Icons.Outlined.TravelExplore,
-                onClick = { navigator.push(GlobalMangaSearchScreen(novelOnly = novelOnly)) },
+                onClick = { navigator.push(GlobalMangaSearchScreen()) },
             ),
             AppBar.Action(
                 title = stringResource(MR.strings.action_filter),

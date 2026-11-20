@@ -46,7 +46,6 @@ fun MigrateMangaSearchScreen(
             fromSourceId = fromSourceId,
             items = state.filteredItems,
             contentPadding = paddingValues,
-            getManga = getManga,
             onClickSource = onClickSource,
             onClickItem = onClickItem,
             onLongClickItem = onLongClickItem,

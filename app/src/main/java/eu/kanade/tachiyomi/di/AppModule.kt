@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.di
 
 import android.app.Application
+import android.content.Context
 import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -74,6 +75,10 @@ class AppModule(val app: Application) : InjektModule {
 
     override fun InjektRegistrar.registerInjectables() {
         addSingleton(app)
+
+        // SharedPreferences used outside PreferenceStore for ad-hoc persistence (e.g. MangaDownload
+        // persists QUEUE/DOWNLOADING/ERROR per chapter via Injekt).
+        addSingletonFactory { app.getSharedPreferences("pending_downloads", Context.MODE_PRIVATE) }
 
         val sqlDriverManga = AndroidSqliteDriver(
             schema = Database.Schema,

@@ -33,7 +33,6 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
-import eu.kanade.domain.ui.model.NavTab
 import eu.kanade.presentation.category.components.ChangeCategoryDialog
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.AppBarActions
@@ -131,18 +130,11 @@ data object MangaLibraryTab : Tab {
             started
         }
 
-        val fromMore = NavTab.Manga.prefKey !in currentBottomNavTabs()
-
-        val navigateUp: (() -> Unit)? = if (fromMore) {
-            {
-                if (navigator.lastItem == HomeScreen) {
-                    scope.launch { HomeScreen.openTab(HomeScreen.Tab.AnimeLib()) }
-                } else {
-                    navigator.pop()
-                }
-            }
-        } else {
+        val navigateUp: (() -> Unit)? = if (navigator.lastItem == HomeScreen) {
             null
+        } else {
+            { navigator.pop() }
+        }
         }
 
         val defaultTitle = stringResource(AYMR.strings.label_manga_library)

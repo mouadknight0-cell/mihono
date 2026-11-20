@@ -9,7 +9,12 @@ import tachiyomi.domain.source.manga.model.Pins
 import tachiyomi.domain.source.manga.model.Source
 import tachiyomi.domain.source.manga.repository.MangaSourceRepository
 import tachiyomi.source.local.entries.manga.LocalMangaSource
-import tachiyomi.source.local.entries.novel.LocalNovelSource
+
+/**
+ * Language tag (BCP 47) that matches Manhwa entries — Mihono keeps manga in the Manhwa class
+ * of titles; non-Manhwa manga sources are hidden.
+ */
+const val MANWA_LANG = "manhwa"
 
 class GetEnabledMangaSources(
     private val repository: MangaSourceRepository,
@@ -30,11 +35,7 @@ class GetEnabledMangaSources(
             repository.getMangaSources(),
         ) { pinnedSourceIds, enabledLanguages, (disabledSources, lastUsedSource, excludedFromDataSaver), sources ->
             sources
-                .filter {
-                    it.lang in enabledLanguages ||
-                        it.id == LocalMangaSource.ID ||
-                        it.id == LocalNovelSource.ID
-                }
+                .filter { it.id == LocalMangaSource.ID || it.lang == MANWA_LANG }
                 .filterNot { it.id.toString() in disabledSources }
                 .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
                 .flatMap {

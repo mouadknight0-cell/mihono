@@ -45,22 +45,14 @@ class MigrateMangaSearchScreenModel(
     }
 
     override fun getEnabledSources(): List<CatalogueSource> {
-        // Migrate within the same media type: a novel only offers other novel sources as targets, and
-        // manga migration excludes novel sources.
-        val migratingNovel = state.value.fromSourceId?.let { NovelSourceCompat.isNovelSource(it) } ?: false
+        // Mihono is Manhwa-first: migrate within the manga/Manhwa class of titles.
         return super.getEnabledSources()
-            .filter { NovelSourceCompat.isNovelSource(it.id) == migratingNovel }
+            .filter { NovelSourceCompat.isNovelSource(it.id) == false }
             .filter { "${it.id}" !in excludedSources && it.lang !in excludedLanguages }
-            .filter {
-                state.value.sourceFilter != MangaSourceFilter.PinnedOnly ||
-                    pinnedSources.isEmpty() ||
-                    "${it.id}" in pinnedSources
-            }
             .sortedWith(
                 compareBy(
                     { priorityRank(it.id) },
                     { it.id != state.value.fromSourceId },
-                    { "${it.id}" !in pinnedSources },
                     { "${it.name.lowercase()} (${it.lang})" },
                 ),
             )

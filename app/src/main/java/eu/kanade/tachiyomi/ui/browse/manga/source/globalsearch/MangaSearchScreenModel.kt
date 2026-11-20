@@ -49,7 +49,6 @@ abstract class MangaSearchScreenModel(
 
     private val enabledLanguages = sourcePreferences.enabledLanguages().get()
     private val disabledSources = sourcePreferences.disabledMangaSources().get()
-    protected val pinnedSources = sourcePreferences.pinnedMangaSources().get()
 
     private var lastQuery: String? = null
     private var lastSourceFilter: MangaSourceFilter? = null
@@ -69,7 +68,6 @@ abstract class MangaSearchScreenModel(
         compareBy<CatalogueSource>(
             { priorityRank(it.id) },
             { (map[it] as? MangaSearchItemResult.Success)?.isEmpty ?: true },
-            { "${it.id}" !in pinnedSources },
             { "${it.name.lowercase()} (${it.lang})" },
         )
     }
@@ -99,7 +97,6 @@ abstract class MangaSearchScreenModel(
             .sortedWith(
                 compareBy(
                     { priorityRank(it.id) },
-                    { "${it.id}" !in pinnedSources },
                     { "${it.name.lowercase()} (${it.lang})" },
                 ),
             )
@@ -124,8 +121,7 @@ abstract class MangaSearchScreenModel(
         mutableState.update { it.copy(searchQuery = query) }
     }
 
-    open fun setSourceFilter(filter: MangaSourceFilter) {
-        mutableState.update { it.copy(sourceFilter = filter) }
+    open fun setSourceFilter(@Suppress("unused") filter: MangaSourceFilter) {
         search()
     }
 
@@ -217,7 +213,7 @@ abstract class MangaSearchScreenModel(
     data class State(
         val fromSourceId: Long? = null,
         val searchQuery: String? = null,
-        val sourceFilter: MangaSourceFilter = MangaSourceFilter.PinnedOnly,
+        val sourceFilter: MangaSourceFilter = MangaSourceFilter.All,
         val onlyShowHasResults: Boolean = false,
         val items: PersistentMap<CatalogueSource, MangaSearchItemResult> = persistentMapOf(),
     ) {
@@ -229,7 +225,6 @@ abstract class MangaSearchScreenModel(
 
 enum class MangaSourceFilter {
     All,
-    PinnedOnly,
 }
 
 sealed interface MangaSearchItemResult {

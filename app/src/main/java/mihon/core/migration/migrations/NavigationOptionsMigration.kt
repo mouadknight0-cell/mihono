@@ -21,24 +21,22 @@ class NavigationOptionsMigration : Migration {
 
         val bottomNavStyle = preferenceStore.getInt("bottom_nav_style", 0)
 
-        val isDefaultTabManga = preferenceStore.getBoolean("default_home_tab_library", false)
         prefs.edit {
             remove("bottom_nav_style")
             remove("default_home_tab_library")
 
-            val startScreen = if (isDefaultTabManga.get()) StartScreen.MANGA else StartScreen.ANIME
+            val startScreen = StartScreen.MANGA
             val navTabs = when (bottomNavStyle.get()) {
-                0 -> setOf(NavTab.Anime.prefKey, NavTab.Manga.prefKey, NavTab.Updates.prefKey, NavTab.Browse.prefKey)
-                1 -> setOf(NavTab.Anime.prefKey, NavTab.Manga.prefKey, NavTab.History.prefKey, NavTab.Browse.prefKey)
+                0 -> setOf(NavTab.Manga.prefKey, NavTab.History.prefKey, NavTab.Browse.prefKey)
+                1 -> setOf(NavTab.Manga.prefKey, NavTab.History.prefKey, NavTab.Browse.prefKey)
                 else -> setOf(
-                    NavTab.Anime.prefKey,
-                    NavTab.Updates.prefKey,
+                    NavTab.Manga.prefKey,
                     NavTab.History.prefKey,
                     NavTab.Browse.prefKey,
                 )
             }
 
-            preferenceStore.getEnum("start_screen", StartScreen.ANIME).set(startScreen)
+            preferenceStore.getEnum("start_screen", StartScreen.MANGA).set(startScreen)
             preferenceStore.getStringSet("bottom_nav_tabs", NavTab.DEFAULT).set(navTabs)
         }
 

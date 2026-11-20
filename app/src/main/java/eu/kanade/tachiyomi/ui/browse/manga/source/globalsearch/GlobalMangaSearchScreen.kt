@@ -20,7 +20,6 @@ import tachiyomi.presentation.core.screens.LoadingScreen
 class GlobalMangaSearchScreen(
     val searchQuery: String = "",
     private val extensionFilter: String? = null,
-    private val novelOnly: Boolean = false,
 ) : Screen() {
 
     @Composable
@@ -36,7 +35,6 @@ class GlobalMangaSearchScreen(
             GlobalMangaSearchScreenModel(
                 initialQuery = searchQuery,
                 initialExtensionFilter = extensionFilter,
-                novelOnly = novelOnly,
             )
         }
         val state by screenModel.state.collectAsState()
@@ -70,7 +68,6 @@ class GlobalMangaSearchScreen(
                 navigateUp = navigator::pop,
                 onChangeSearchQuery = screenModel::updateSearchQuery,
                 onSearch = { screenModel.search() },
-                getManga = { screenModel.getManga(it) },
                 onChangeSearchFilter = screenModel::setSourceFilter,
                 onToggleResults = screenModel::toggleFilterResults,
                 onClickSource = {

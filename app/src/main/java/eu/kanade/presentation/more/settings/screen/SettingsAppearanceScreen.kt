@@ -59,7 +59,6 @@ import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.domain.ui.model.AppIcon
-import eu.kanade.domain.ui.model.HomeTabsMode
 import eu.kanade.domain.ui.model.NavBarLabelMode
 import eu.kanade.domain.ui.model.StartScreen
 import eu.kanade.domain.ui.model.TabletUiMode
@@ -204,21 +203,6 @@ object SettingsAppearanceScreen : SearchableSettings {
                         .associateWith { stringResource(it.titleRes) }
                         .toImmutableMap(),
                     title = stringResource(MR.strings.pref_tablet_ui_mode),
-                    onValueChanged = {
-                        context.toast(MR.strings.requires_app_restart)
-                        true
-                    },
-                ),
-                Preference.PreferenceItem.ListPreference(
-                    preference = uiPreferences.homeTabsMode(),
-                    entries = persistentMapOf(
-                        HomeTabsMode.ANIME_FIRST to stringResource(AYMR.strings.pref_home_tabs_both_anime),
-                        HomeTabsMode.MANGA_FIRST to stringResource(AYMR.strings.pref_home_tabs_both_manga),
-                        HomeTabsMode.ANIME_ONLY to stringResource(AYMR.strings.pref_home_tabs_anime_only),
-                        HomeTabsMode.MANGA_ONLY to stringResource(AYMR.strings.pref_home_tabs_manga_only),
-                    ),
-                    title = stringResource(AYMR.strings.pref_home_tabs_mode),
-                    subtitle = stringResource(AYMR.strings.pref_home_tabs_mode_summary),
                     onValueChanged = {
                         context.toast(MR.strings.requires_app_restart)
                         true

@@ -25,14 +25,14 @@ class BottomNavTabsMigration : Migration {
         if (!prefs.contains("bottom_nav_tabs")) {
             val navTabs = when (prefs.getString("bottom_rail_nav_style", null)) {
                 "MOVE_MANGA_TO_MORE" ->
-                    setOf(NavTab.Anime.prefKey, NavTab.Updates.prefKey, NavTab.History.prefKey, NavTab.Browse.prefKey)
+                    setOf(NavTab.Manga.prefKey, NavTab.History.prefKey, NavTab.Browse.prefKey)
                 "MOVE_UPDATES_TO_MORE" ->
-                    setOf(NavTab.Anime.prefKey, NavTab.Manga.prefKey, NavTab.History.prefKey, NavTab.Browse.prefKey)
+                    setOf(NavTab.Manga.prefKey, NavTab.History.prefKey, NavTab.Browse.prefKey)
                 "MOVE_BROWSE_TO_MORE" ->
-                    setOf(NavTab.Anime.prefKey, NavTab.Manga.prefKey, NavTab.Updates.prefKey, NavTab.History.prefKey)
+                    setOf(NavTab.Manga.prefKey, NavTab.History.prefKey, NavTab.Browse.prefKey)
                 // "MOVE_HISTORY_TO_MORE" and users who never changed it: the previous default.
                 else ->
-                    setOf(NavTab.Anime.prefKey, NavTab.Manga.prefKey, NavTab.Updates.prefKey, NavTab.Browse.prefKey)
+                    setOf(NavTab.Manga.prefKey, NavTab.Browse.prefKey)
             }
             preferenceStore.getStringSet("bottom_nav_tabs", NavTab.DEFAULT).set(navTabs)
         }

@@ -77,21 +77,6 @@ fun GlobalMangaSearchToolbar(
         ) {
             // TODO: make this UX better; it only applies when triggering a new search
             FilterChip(
-                selected = sourceFilter == MangaSourceFilter.PinnedOnly,
-                onClick = { onChangeSearchFilter(MangaSourceFilter.PinnedOnly) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Outlined.PushPin,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(FilterChipDefaults.IconSize),
-                    )
-                },
-                label = {
-                    Text(text = stringResource(MR.strings.pinned_sources))
-                },
-            )
-            FilterChip(
                 selected = sourceFilter == MangaSourceFilter.All,
                 onClick = { onChangeSearchFilter(MangaSourceFilter.All) },
                 leadingIcon = {

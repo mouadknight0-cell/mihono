@@ -373,7 +373,7 @@ class MangaScreen(
         novelOnly: Boolean = false,
     ) {
         if (global) {
-            navigator.push(GlobalMangaSearchScreen(query, novelOnly = novelOnly))
+            navigator.push(GlobalMangaSearchScreen(query))
             return
         }
 

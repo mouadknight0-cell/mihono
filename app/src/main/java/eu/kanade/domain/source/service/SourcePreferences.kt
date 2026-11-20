@@ -1,7 +1,7 @@
 package eu.kanade.domain.source.service
 
 import eu.kanade.domain.source.interactor.SetMigrateSorting
-import eu.kanade.tachiyomi.util.system.LocaleHelper
+import eu.kanade.domain.source.manga.interactor.MANWA_LANG
 import tachiyomi.core.common.preference.Preference
 import tachiyomi.core.common.preference.PreferenceStore
 import tachiyomi.core.common.preference.getEnum
@@ -22,7 +22,8 @@ class SourcePreferences(
 
     fun enabledLanguages() = preferenceStore.getStringSet(
         "source_languages",
-        LocaleHelper.getDefaultEnabledLanguages(),
+        // Mihono default: Manhwa-first app — only offer Manhwa sources by default.
+        setOf(MANWA_LANG),
     )
 
     fun showNsfwSource() = preferenceStore.getBoolean("show_nsfw_source", true)
@@ -54,10 +55,6 @@ class SourcePreferences(
         Preference.appStateKey("has_filters_toggle_state"),
         false,
     )
-
-    // Remembers the last-used global-search source filter (Pinned vs All) so global search opens with
-    // the user's choice next time. Defaults to Pinned to keep upstream's "don't spam every source".
-    fun globalSearchPinnedOnly() = preferenceStore.getBoolean("global_search_pinned_only", true)
 
     // Mixture Sources
 

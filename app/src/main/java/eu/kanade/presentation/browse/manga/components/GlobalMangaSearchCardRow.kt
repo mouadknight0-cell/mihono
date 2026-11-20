@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -27,7 +26,6 @@ import tachiyomi.presentation.core.i18n.stringResource
 @Composable
 fun GlobalMangaSearchCardRow(
     titles: List<Manga>,
-    getManga: @Composable (Manga) -> State<Manga>,
     onClick: (Manga) -> Unit,
     onLongClick: (Manga) -> Unit,
 ) {
@@ -41,13 +39,12 @@ fun GlobalMangaSearchCardRow(
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
     ) {
         items(titles) {
-            val title by getManga(it)
             MangaItem(
-                title = title.title,
-                cover = title.asMangaCover(),
-                isFavorite = title.favorite,
-                onClick = { onClick(title) },
-                onLongClick = { onLongClick(title) },
+                title = it.title,
+                cover = it.asMangaCover(),
+                isFavorite = it.favorite,
+                onClick = { onClick(it) },
+                onLongClick = { onLongClick(it) },
             )
         }
     }

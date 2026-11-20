@@ -3,7 +3,6 @@ package eu.kanade.presentation.browse.manga
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
 import androidx.compose.ui.Modifier
 import eu.kanade.presentation.browse.GlobalSearchErrorResultItem
 import eu.kanade.presentation.browse.GlobalSearchLoadingResultItem
@@ -26,7 +25,6 @@ fun GlobalMangaSearchScreen(
     onSearch: (String) -> Unit,
     onChangeSearchFilter: (MangaSourceFilter) -> Unit,
     onToggleResults: () -> Unit,
-    getManga: @Composable (Manga) -> State<Manga>,
     onClickSource: (CatalogueSource) -> Unit,
     onClickItem: (Manga) -> Unit,
     onLongClickItem: (Manga) -> Unit,
@@ -51,7 +49,6 @@ fun GlobalMangaSearchScreen(
         GlobalSearchContent(
             items = state.filteredItems,
             contentPadding = paddingValues,
-            getManga = getManga,
             onClickSource = onClickSource,
             onClickItem = onClickItem,
             onLongClickItem = onLongClickItem,
@@ -63,7 +60,6 @@ fun GlobalMangaSearchScreen(
 internal fun GlobalSearchContent(
     items: Map<CatalogueSource, MangaSearchItemResult>,
     contentPadding: PaddingValues,
-    getManga: @Composable (Manga) -> State<Manga>,
     onClickSource: (CatalogueSource) -> Unit,
     onClickItem: (Manga) -> Unit,
     onLongClickItem: (Manga) -> Unit,
@@ -89,7 +85,6 @@ internal fun GlobalSearchContent(
                         is MangaSearchItemResult.Success -> {
                             GlobalMangaSearchCardRow(
                                 titles = result.result,
-                                getManga = getManga,
                                 onClick = onClickItem,
                                 onLongClick = onLongClickItem,
                             )

@@ -93,7 +93,9 @@ android {
     splits {
         abi {
             isEnable = true
-            isUniversalApk = true
+            // Mihono is distributed as per-ABI APKs; a universal APK would bundle the
+            // native libraries of every architecture into a single download.
+            isUniversalApk = false
             reset()
             include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
         }
@@ -101,31 +103,9 @@ android {
 
     packaging {
         jniLibs {
-            keepDebugSymbols += listOf(
-                "libandroidx.graphics.path",
-                "libarchive-jni",
-                "libavcodec",
-                "libavdevice",
-                "libavfilter",
-                "libavformat",
-                "libavutil",
-                "libconscrypt_jni",
-                "libc++_shared",
-                "libffmpegkit_abidetect",
-                "libffmpegkit",
-                "libimagedecoder",
-                "liblibrary",
-                "libmpv",
-                "libplayer",
-                "libpostproc",
-                "libquickjs",
-                "libsqlite3x",
-                "libswresample",
-                "libswscale",
-                "libtorrserver",
-                "libxml2",
-            )
-                .map { "**/$it.so" }
+            // Do not keep debug symbols in packaged native libraries: they inflate
+            // every .so (notably the media stack) without affecting runtime behaviour.
+            keepDebugSymbols.clear()
         }
         resources {
             excludes += setOf(

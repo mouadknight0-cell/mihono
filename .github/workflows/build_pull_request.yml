@@ -68,7 +68,30 @@ jobs:
         with:
           name: mihono-apk-${{ github.sha }}
           if-no-files-found: error
-          path: '**/outputs/**/*.apk'
+          path: app/build/outputs/apk/preview/app-arm64-v8a-preview.apk
+
+      - name: Report APK sizes on PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          APK=app/build/outputs/apk/preview/app-arm64-v8a-preview.apk
+          REL=app/build/outputs/apk/release/app-arm64-v8a-release-unsigned.apk
+          {
+            echo "### APK size report @ ${{ github.sha }}"
+            echo
+            echo '```'
+            ls -la app/build/outputs/apk/preview/ app/build/outputs/apk/release/ 2>/dev/null
+            for f in "$APK" "$REL"; do
+              [ -f "$f" ] && echo "$f: $(du -h "$f" | cut -f1) ($(stat -c%s "$f") bytes)"
+            done
+            echo '--- largest entries in arm64 preview APK ---'
+            [ -f "$APK" ] && unzip -l "$APK" | sort -k1 -nr | head -n 25
+            echo '--- native libs by ABI (preview) ---'
+            [ -f "$APK" ] && unzip -l "$APK" | grep -E "lib/.*\.so" | awk '{s[$2]+=$1} END {for (k in s) print k, s[k]}' | sort -k2 -nr | head
+            echo '```'
+          } > size-report.md
+          gh pr comment ${{ github.event.pull_request.number }} --body-file size-report.md || true
 
       - name: Upload mapping
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

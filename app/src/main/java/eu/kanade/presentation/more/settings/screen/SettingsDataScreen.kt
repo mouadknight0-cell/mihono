@@ -200,7 +200,7 @@ object SettingsDataScreen : SearchableSettings {
             subtitle = stringResource(AYMR.strings.pref_invalidate_download_cache_summary),
             onClick = {
                 Injekt.get<MangaDownloadCache>().invalidateCache()
-                    context.toast(MR.strings.download_cache_invalidated)
+                context.toast(MR.strings.download_cache_invalidated)
             },
         )
     }

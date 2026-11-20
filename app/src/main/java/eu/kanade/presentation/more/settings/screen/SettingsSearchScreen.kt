@@ -177,7 +177,7 @@ private fun SearchResult(
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val context = LocalContext.current
 
-    val index = if (isPlayer) getPlayerIndex() else getIndex() + getPlayerIndex()
+    val index = getIndex()
     val result by produceState<List<SearchResultItem>?>(initialValue = null, searchKey) {
         value = index.asSequence()
             .flatMap { settingsData ->
@@ -214,9 +214,6 @@ private fun SearchResult(
                             title = p.title,
                             breadcrumbs = getLocalizedBreadcrumb(
                                 nodes = buildList {
-                                    if (!isPlayer && settingsData.playerSettings) {
-                                        add(AYMR.strings.label_player_settings.getString(context))
-                                    }
                                     add(settingsData.title)
                                     if (categoryTitle != null) add(categoryTitle)
                                 },
@@ -289,18 +286,6 @@ private fun getIndex() = settingScreens
         )
     }
 
-@Composable
-@NonRestartableComposable
-private fun getPlayerIndex() = playerSettingScreens
-    .map { screen ->
-        SettingsData(
-            title = stringResource(screen.getTitleRes()),
-            route = screen,
-            contents = screen.getPreferences(),
-            playerSettings = true,
-        )
-    }
-
 private fun getLocalizedBreadcrumb(nodes: List<String>, isLtr: Boolean): String {
     return if (isLtr) {
         // This locale reads left to right.
@@ -310,9 +295,6 @@ private fun getLocalizedBreadcrumb(nodes: List<String>, isLtr: Boolean): String 
         nodes.reversed().joinToString(" < ")
     }
 }
-
-private val playerSettingScreens = listOf(
-)
 
 private val settingScreens = listOf(
     SettingsAppearanceScreen,
@@ -330,7 +312,6 @@ private data class SettingsData(
     val title: String,
     val route: VoyagerScreen,
     val contents: List<Preference>,
-    val playerSettings: Boolean = false,
 )
 
 private data class SearchResultItem(

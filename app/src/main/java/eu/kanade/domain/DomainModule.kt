@@ -347,7 +347,6 @@ class DomainModule : InjektModule {
         addFactory { UpsertAnimeHistory(get()) }
         addFactory { RemoveAnimeHistory(get()) }
 
-
         addFactory { GetAnimeExtensionsByType(get(), get()) }
         addFactory { GetAnimeExtensionSources(get()) }
         addFactory { GetAnimeExtensionLanguages(get(), get()) }
@@ -423,6 +422,5 @@ class DomainModule : InjektModule {
         addFactory { UpdateCustomButton(get()) }
         addFactory { ReorderCustomButton(get()) }
         addFactory { ToggleFavoriteCustomButton(get()) }
-
     }
 }

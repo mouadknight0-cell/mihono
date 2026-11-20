@@ -208,7 +208,6 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { MangaDownloadManager(app) }
         addSingletonFactory { MangaDownloadCache(app) }
 
-
         addSingletonFactory { TrackerManager(app) }
         addSingletonFactory { DelayedAnimeTrackingStore(app) }
         addSingletonFactory { DelayedMangaTrackingStore(app) }
@@ -227,7 +226,6 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { LocalEpisodeThumbnailManager(app, get()) }
 
         addSingletonFactory { StorageManager(app, get()) }
-
 
         // Asynchronously init expensive components for a faster cold start
         ContextCompat.getMainExecutor(app).execute {

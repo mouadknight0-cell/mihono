@@ -283,7 +283,6 @@ class MainActivity : BaseActivity() {
                 chapterCache.clear()
             }
         }
-
     }
 
     override fun onProvideAssistContent(outContent: AssistContent) {

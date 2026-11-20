@@ -920,7 +920,6 @@ class AnimeLibraryScreenModel(
                 }
                 updateAnime.awaitAll(toDelete)
             }
-
         }
     }
 

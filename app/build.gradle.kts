@@ -284,8 +284,6 @@ dependencies {
     implementation(libs.leakcanary.plumber)
 
     testImplementation(kotlinx.coroutines.test)
-
-    // true type parser
 }
 
 androidComponents {

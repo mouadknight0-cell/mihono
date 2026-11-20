@@ -84,7 +84,6 @@ class AnimeUpdatesScreenModel(
                     }
                 }
         }
-
     }
 
     private fun List<AnimeUpdatesWithRelations>.toUpdateItems(): PersistentList<AnimeUpdatesItem> {

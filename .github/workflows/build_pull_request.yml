@@ -101,15 +101,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="apk-pr-${{ github.event.pull_request.number }}"
+          cp app/build/outputs/apk/preview/app-universal-preview.apk mihono.apk
           cp app/build/outputs/apk/preview/app-arm64-v8a-preview.apk mihono-arm64-v8a.apk
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" \
             --prerelease \
             --title "Mihono APK (PR #${{ github.event.pull_request.number }})" \
-            --notes "Rolling preview build (arm64-v8a, debug-signed) from the latest PR build."
-          gh release upload "$TAG" mihono-arm64-v8a.apk --clobber
-          URL="https://github.com/${{ github.repository }}/releases/download/$TAG/mihono-arm64-v8a.apk"
+            --notes "Rolling preview build from the latest PR build. mihono.apk = universal (any device), mihono-arm64-v8a.apk = smaller arm64-only build."
+          gh release upload "$TAG" mihono.apk mihono-arm64-v8a.apk --clobber
+          URL="https://github.com/${{ github.repository }}/releases/download/$TAG/mihono.apk"
           echo "Direct APK download: $URL" >> "$GITHUB_STEP_SUMMARY"
-          printf '📥 **Direct APK download (arm64-v8a):** %s\n\nBuilt from `%s`.\n' "$URL" "${{ github.sha }}" > apk-link.md
+          printf '📥 **Direct APK download (universal, any device):** %s\n\nSmaller arm64-only build: https://github.com/${{ github.repository }}/releases/download/%s/mihono-arm64-v8a.apk\n\nBuilt from `%s`.\n' "$URL" "$TAG" "${{ github.sha }}" > apk-link.md
           gh pr comment ${{ github.event.pull_request.number }} --body-file apk-link.md || true
 
       - name: Upload mapping

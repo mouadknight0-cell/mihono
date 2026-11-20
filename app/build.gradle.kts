@@ -42,6 +42,22 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        // Stable key for preview builds so new builds can be installed over
+        // older ones. CI runners generate a fresh debug key per job, which
+        // made every preview build uninstallable as an update. This key is
+        // only used for the preview channel (app.mihono.debug); the release
+        // build type stays unsigned. It is committed on purpose (preview-only
+        // key, same posture as a debug key) — rotate if that ever matters.
+        create("previewCi") {
+            storeFile = rootProject.file("signing/mihono-preview.p12")
+            storePassword = "mihono-preview"
+            keyAlias = "mihono"
+            keyPassword = "mihono-preview"
+            storeType = "PKCS12"
+        }
+    }
+
     buildTypes {
         val debug by getting {
             applicationIdSuffix = ".dev"
@@ -65,7 +81,7 @@ android {
             applicationIdSuffix = ".debug"
 
             versionNameSuffix = debug.versionNameSuffix
-            signingConfig = debug.signingConfig
+            signingConfig = signingConfigs.getByName("previewCi")
 
             matchingFallbacks.addAll(commonMatchingFallbacks)
 
@@ -93,9 +109,10 @@ android {
     splits {
         abi {
             isEnable = true
-            // Mihono is distributed as per-ABI APKs; a universal APK would bundle the
-            // native libraries of every architecture into a single download.
-            isUniversalApk = false
+            // Ship per-ABI APKs (small downloads) plus a universal APK: the
+            // universal build is the one published as the direct download link
+            // because it installs on any device regardless of architecture.
+            isUniversalApk = true
             reset()
             include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
         }

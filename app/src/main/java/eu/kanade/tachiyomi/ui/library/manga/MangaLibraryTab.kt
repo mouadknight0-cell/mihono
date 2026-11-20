@@ -135,7 +135,6 @@ data object MangaLibraryTab : Tab {
         } else {
             { navigator.pop() }
         }
-        }
 
         val defaultTitle = stringResource(AYMR.strings.label_manga_library)
 

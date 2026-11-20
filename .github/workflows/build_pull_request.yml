@@ -20,6 +20,7 @@ concurrency:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   build:
@@ -46,13 +47,33 @@ jobs:
         uses: gradle/actions/setup-gradle@94baf225fe0a508e581a564467443d0e2379123b # v4.3.0
 
       - name: Check code format
-        run: ./gradlew spotlessCheck
+        run: ./gradlew spotlessCheck 2>&1 | tee spotless.log
 
       - name: Build app
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleRelease 2>&1 | tee build.log
 
       - name: Run unit tests
-        run: ./gradlew testReleaseUnitTest
+        run: ./gradlew testReleaseUnitTest 2>&1 | tee test.log
+
+      # Build logs cannot be downloaded from every environment, so surface the
+      # relevant errors directly on the PR for diagnosis.
+      - name: Report failure on PR
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "### CI failure @ ${{ github.sha }}"
+            echo
+            echo '```'
+            grep -hE "e: |error:|FAILED|What went wrong|Execution failed" spotless.log build.log test.log 2>/dev/null | head -n 120
+            echo '```'
+            echo
+            echo '```'
+            tail -n 120 spotless.log build.log test.log 2>/dev/null | tail -n 120
+            echo '```'
+          } > report.md
+          gh pr comment ${{ github.event.pull_request.number }} --body-file report.md || true
 
       - name: Upload APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

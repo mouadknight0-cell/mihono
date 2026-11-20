@@ -61,7 +61,7 @@ jobs:
 
       - name: List build outputs
         if: always()
-        run: find . -path ./node_modules -prune -o -type f -name '*.apk' -print 2>/dev/null | sort | tee outputs.log; ls app/build/outputs/apk 2>/dev/null || echo 'no app/build/outputs/apk'
+        run: find . -path ./node_modules -prune -o -type f -name '*.apk' -print 2>/dev/null | sort | tee -a outputs.log; ls app/build/outputs/apk 2>/dev/null || echo 'no app/build/outputs/apk'
 
       - name: Upload APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
